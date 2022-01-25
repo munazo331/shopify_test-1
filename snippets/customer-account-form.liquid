@@ -1,1 +1,126 @@
-<span class="placeForCustomerForm"></span>
+<span style="display: none" id="ar_first_name_title">姓</span><span style="display: none" id="ar_last_name_title">名</span><span style="display: none" id="ar_submit_label">Submit</span><span style="display: none" id="ar_form_title">アカウントフォームの項目</span><span style="display: none" id="ar_customer_form_save_success_text">データは正常に保存されました</span><span style="display: none" id="ar_customer_form_save_error_text">何か問題が発生しました。もう一度保存を試みてください</span><span style="display: none" id="ar_blank_fields_warning">入力必須の項目です。</span>{% if shop.customer_accounts_enabled and template.name == 'account' %}
+	{% if customer %}
+        {{ 'advanced-form.css' | asset_url | stylesheet_tag }}
+        <style>
+            @keyframes spinner {
+                to {transform: rotate(360deg);}
+            }
+            .spinner:before {
+                content: '';
+                box-sizing: border-box;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 20px;
+                height: 20px;
+                margin-left: -10px;
+                border-radius: 50%;
+                border: 2px solid #ccc;
+                border-top-color: #000;
+                animation: spinner .6s linear infinite;
+            }
+        </style>
+        <div class="plvr signup-form" id="customerAccountForm" style="margin: 30px auto;width: 90%;border-top: 1px solid lightgray;padding: 50px 30px;border-bottom: 1px solid lightgray;">
+            <h2 style="width: 100%;text-align: center;margin: 0;padding: 0;" class="formTitle"></h2>
+            <h5 style="width: 100%;text-align: center;" class="customerEmail">({{ customer.email }})</h5>
+          	<form id="customer_account_form" action="javascript:void(0)" data-shop-url="{{ shop.url }}" data-customer-id="{{ customer.id }}" style="margin-top:50px">
+            	<div class="formErrorsSection alert alert-danger" role="alert" style="display:none"></div>
+            	<div class="fieldWrapper halfWidth">
+              		<div class="form-group">
+                		<label class="fieldLabel firstNameLabel"></label>
+                		<div class="originalField" data-name-key="first_name" data-name="First name" data-is-mandatory="{% if customer.first_name %}1{% else %}0{% endif %}">
+                  			<input type="text" name="first_name" id="first_name" class="form-control originalValue" value="{{ customer.first_name }}" />
+                		</div>
+              		</div>
+                </div>
+            	<div class="fieldWrapper halfWidth">
+              		<div class="form-group">
+                		<label class="fieldLabel lastNameLabel"></label>
+                		<div class="originalField" data-name-key="last_name" data-name="Last name" data-is-mandatory="{% if customer.last_name %}1{% else %}0{% endif %}">
+                  			<input type="text" name="last_name" id="last_name" class="form-control originalValue" value="{{ customer.last_name }}" />
+                		</div>
+              		</div>
+            	</div>
+                {% if customer.metafields.custom_registration.fields_count %}
+                    {% for i in (0..customer.metafields.custom_registration.fields_count) %}
+                        {% assign fieldTypeKey = 'field_type_' | append: i %}
+                        {% assign fieldNameKey = 'field_name_' | append: i %}
+                        {% assign fieldValueKey = 'field_value_' | append: i %}
+                        {% assign fieldOptionsKey = 'field_options_' | append: i %}
+                        {% if customer.metafields.custom_registration[fieldTypeKey] == 'text' %}
+                            <div class="fieldWrapper">
+                                <div class="form-group">
+                                    <label class="fieldLabel">{{ customer.metafields.custom_registration[fieldNameKey] }}</label>
+                                    <div class="customField" data-custom-name-key="{{ fieldNameKey }}" data-custom-field-value-key="{% if customer.metafields.custom_registration[fieldValueKey] %}{{ fieldValueKey }}{% endif %}" data-name="{{ customer.metafields.custom_registration[fieldNameKey] }}" data-field-type="text" data-is-mandatory="{% if customer.metafields.custom_registration[fieldValueKey] %}1{% else %}0{% endif %}">
+                                        <input type="text" name="{{ fieldNameKey }}" id="{{ fieldNameKey }}" class="form-control customValue customFieldElement" value="{{ customer.metafields.custom_registration[fieldValueKey] }}" />
+                                    </div>
+                                </div>
+                            </div>
+                        {% elsif customer.metafields.custom_registration[fieldTypeKey] == 'longtext' %}
+                            <div class="fieldWrapper">
+                                <div class="form-group">
+                                    <label class="fieldLabel">{{ customer.metafields.custom_registration[fieldNameKey] }}</label>
+                                    <div class="customField" data-custom-name-key="{{ fieldNameKey }}" data-custom-field-value-key="{% if customer.metafields.custom_registration[fieldValueKey] %}{{ fieldValueKey }}{% endif %}" data-name="{{ customer.metafields.custom_registration[fieldNameKey] }}" data-field-type="longtext" data-is-mandatory="{% if customer.metafields.custom_registration[fieldValueKey] %}1{% else %}0{% endif %}">
+                                        <textarea class="form-control customFieldElement customValue" name="{{ fieldNameKey }}" id="{{ fieldNameKey }}">{{ customer.metafields.custom_registration[fieldValueKey] }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elsif customer.metafields.custom_registration[fieldTypeKey] == 'dropdown' %}
+                            {% assign options = customer.metafields.custom_registration[fieldOptionsKey] | split: ';' %}
+                            <div class="fieldWrapper">
+                                <div class="form-group">
+                                    <label class="fieldLabel">{{ customer.metafields.custom_registration[fieldNameKey] }}</label>
+                                    <div class="customField" data-custom-name-key="{{ fieldNameKey }}" data-custom-field-value-key="{% if customer.metafields.custom_registration[fieldValueKey] %}{{ fieldValueKey }}{% endif %}" data-name="{{ customer.metafields.custom_registration[fieldNameKey] }}" data-field-type="dropdown" data-is-mandatory="{% if customer.metafields.custom_registration[fieldValueKey] %}1{% else %}0{% endif %}">
+                                        <select class="form-control customFieldElement customValue" type="select" name="select_{{ forloop.index0 }}" id="{{ fieldNameKey }}">
+                                            {% for option in options %}
+                                                <option value="{{ option }}" {% if option == customer.metafields.custom_registration[fieldValueKey] %} selected="selected" {% endif %}>{{ option }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elsif customer.metafields.custom_registration[fieldTypeKey] == 'radio' %}
+                            {% assign options = customer.metafields.custom_registration[fieldOptionsKey] | split: ';' %}
+                            <div class="fieldWrapper">
+                                <div class="form-group">
+                                    <label class="fieldLabel">{{ customer.metafields.custom_registration[fieldNameKey] }}</label>
+                                    <div class="customField" data-custom-name-key="{{ fieldNameKey }}" data-custom-field-value-key="{% if customer.metafields.custom_registration[fieldValueKey] %}{{ fieldValueKey }}{% endif %}" data-name="{{ customer.metafields.custom_registration[fieldNameKey] }}" data-field-type="radio" data-is-mandatory="{% if customer.metafields.custom_registration[fieldValueKey] %}1{% else %}0{% endif %}">
+                                        {% for option in options %}
+                                            <div class="form-check">
+                                                <input class="form-check-input customFieldElement customValue" type="radio" name="radio_{{ fieldTypeKey }}" value="{{ option }}" {% if option == customer.metafields.custom_registration[fieldValueKey] %} checked="checked" {% endif %} />
+                                                <label class="form-check-label">{{ option }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% elsif customer.metafields.custom_registration[fieldTypeKey] == 'checkbox' %}
+                            {% assign options = customer.metafields.custom_registration[fieldOptionsKey] | split: ';' %}
+                            <div class="fieldWrapper">
+                                <div class="form-group">
+                                    <label class="fieldLabel">{{ customer.metafields.custom_registration[fieldNameKey] }}</label>
+                                    <div class="customField" data-custom-name-key="{{ fieldNameKey }}" data-custom-field-value-key="{% if customer.metafields.custom_registration[fieldValueKey] %}{{ fieldValueKey }}{% endif %}" data-name="{{ customer.metafields.custom_registration[fieldNameKey] }}" data-field-type="checkbox" data-is-mandatory="{% if customer.metafields.custom_registration[fieldValueKey] %}1{% else %}0{% endif %}">
+                                        {% for option in options %}
+                                            <div class="form-check">
+                                                <input class="form-check-input customFieldElement customValue" type="checkbox"  name="checkbox{{ fieldTypeKey }}[]" value="{{ option }}" {% if option == customer.metafields.custom_registration[fieldValueKey] %} checked="checked" {% endif %} />
+                                                <label class="form-check-label">{{ option }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <div class="form-group" style="text-align: center;">
+                    <span class="submitButtonWrapper" style="position:relative">
+                        <input type="submit" style="cursor:pointer;width: 100%; border: medium none;background-color: gray;" class="fieldLabel submitButtonPreview btn btn-primary btn-block" value="" />
+                        <span class="submitOverlay"></span>
+                    </span>
+                </div>
+                <div class="formSaveSuccessSection alert alert-success" role="alert" style="text-align:center;color: #155724;background-color: #d4edda;border-color: #c3e6cb;display:none"></div>
+                <div class="formSaveErrorsSection alert alert-danger" role="alert" style="text-align:center;display:none"></div>
+          	</form>
+        </div>
+	{% endif %}
+{% endif %}
